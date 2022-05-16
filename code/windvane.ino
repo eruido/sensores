@@ -1,3 +1,8 @@
+//   eRuido Wind Vane Arduino Code
+//   Based on
+//   http://www.n8mdp.com/wxanemometer_windvane.php#WindSpeed
+
+
 #include "TimerOne.h" // Timer Interrupt set to 2 second for read sensors
 #include <math.h>
 
@@ -17,6 +22,7 @@ volatile unsigned long ContactBounceTime; // Timer to avoid contact bounce in is
 
 float WindSpeed; // speed miles per hour
 
+
 void setup() {
 
     LastValue = 0;
@@ -31,8 +37,10 @@ void setup() {
     pinMode(WindSensorPin, INPUT);
     attachInterrupt(digitalPinToInterrupt(WindSensorPin), isr_rotation, FALLING);
 
-    Serial.println("eRuido Anemometer Test"); 
-    Serial.println("Speed (MPH)\tKnots\tDirection\tStrength");
+    Serial.println("eRuido Anemometer & Wind Vane 2022"); 
+    Serial.println("Values calculated every 2.5 seconds."); 
+    
+    Serial.println("Wind Speed (MPH)\tWind Speed [Meters Per Sec]\tDirection\tDirectionText");
 
 // Setup the timer interupt
       Timer1.initialize(500000);// Timer interrupt every 2.5 seconds
@@ -55,12 +63,13 @@ void loop() {
             Rotations = 0; // Reset count for next sample
             
             IsSampleRequired = false;
-            
-            Serial.print(WindSpeed); Serial.print("\t\t");
-            Serial.print(getKnots(WindSpeed)); Serial.print("\t");
-            Serial.print(CalDirection);
-            getHeading(CalDirection); Serial.print("\t\t");
-            getWindStrength(WindSpeed);
+            Serial.print("#");
+            Serial.print(WindSpeed); Serial.print(",");
+            Serial.print(getMetrosPorSegundo(WindSpeed)); Serial.print(",");
+            Serial.print(CalDirection);Serial.print(",");
+            getHeading(CalDirection); Serial.print(",");
+            //getWindStrength(WindSpeed);
+            Serial.println(";");
       }
 }
 
@@ -90,15 +99,18 @@ float getKnots(float speed) {
     return speed * 0.868976;
 }
 
+//Convert MPH to meters per second
+float getMetrosPorSegundo(float speed) {
+    return speed * 0.44704;
+}
+
+
 // Get Wind Direction
 void getWindDirection() {
 
     VaneValue = analogRead(WindVanePin);
     Direction = map(VaneValue, 0, 1023, 0, 359);
     CalDirection = Direction + VaneOffset;
-
-//avp20210414
-CalDirection = float(CalDirection)/240*360;
 
     if(CalDirection > 360)
           CalDirection = CalDirection - 360;
